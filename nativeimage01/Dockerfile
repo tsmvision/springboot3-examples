@@ -17,4 +17,4 @@ WORKDIR /www
 COPY --from=builder /www/target/nativeimage01 app
 RUN apk add gcompat
 
-CMD ["./app"]
+ENTRYPOINT ["./app"]
