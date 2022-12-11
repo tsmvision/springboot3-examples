@@ -1,20 +1,15 @@
-FROM ubuntu:22.04 as builder
+FROM ghcr.io/graalvm/graalvm-ce:ol9-java17-22.3.0 as builder
 WORKDIR /www
-COPY pom.xml .
+COPY pom.xml pom.xml
 COPY src src
-ENV SDK_HOME /root/.sdkman
-ENV GRAALVM_HOME $SDK_HOME/candidates/java/current
-ENV SDK_INIT_FILE $SDK_HOME/bin/sdkman-init.sh
-
-RUN apt update  \
-    && apt upgrade \
-    && apt install maven curl tar zip unzip build-essential libz-dev zlib1g-dev -y \
-    && curl -s "https://get.sdkman.io" | bash \
-    && bash -c "source $SDK_INIT_FILE && sdk install java 22.3.r17-grl && mvn -Pnative clean compile package native:compile"
+COPY docker-init.sh docker-init.sh
+ARG MAVEN_FILE=apache-maven-3.8.6-bin.tar.gz
+ARG MAVEN_DOWNLOAD_URL=https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/${MAVEN_FILE}
+RUN chmod +x /www/docker-init.sh && /www/docker-init.sh
 
 FROM alpine:3.17
 WORKDIR /www
 COPY --from=builder /www/target/nativeimage01 app
-RUN apk add gcompat
+RUN apk update && apk add gcompat libstdc++
 
-ENTRYPOINT ["./app"]
+CMD ["/www/app"]
